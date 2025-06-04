@@ -1,0 +1,89 @@
+#include <iostream>
+#include <vector>
+#include <iomanip>
+#include <string>
+#include <algorithm>
+
+struct DataRow {
+    double L;   
+    double U_eff;   
+    double S;        
+};
+
+struct LissajousData {
+    std::string ratio;    
+    double fy;            
+    double fx;            
+};
+
+double calculateSensitivity(double L, double U_eff) {
+    return (0.354 * L) / U_eff;
+}
+
+void printTable(const std::vector<DataRow>& table, const std::string& title) {
+    std::cout << "\n" << title << ":\n";
+    std::cout << "L (мм)\tU_eff (В)\tS (мм/В)\n";
+    for (const auto& row : table) {
+        std::cout << std::fixed
+                  << std::setprecision(2) << row.L << "\t"
+                  << std::setprecision(3) << row.U_eff << "\t\t"
+                  << std::setprecision(4) << row.S << "\n";
+    }
+}
+
+void printLissajousTable(const std::vector<LissajousData>& table) {
+    std::cout << "\nФигуры Лиссажу и параметры частот:\n";
+    std::cout << std::setw(20) << "Отношение частот" 
+              << std::setw(20) << "f_y (Гц)" 
+              << std::setw(20) << "f_x (Гц)" 
+              << std::endl;
+    std::cout << std::string(60, '-') << std::endl;
+    
+    for (const auto& row : table) {
+        std::cout << std::setw(20) << row.ratio
+                  << std::setw(20) << std::fixed << std::setprecision(2) << row.fy
+                  << std::setw(20) << std::fixed << std::setprecision(2) << row.fx
+                  << std::endl;
+    }
+}
+
+int main() {
+    std::vector<DataRow> pvo = {
+        {10, 6.460, 0}, {20, 12.330, 0}, {30, 18.140, 0}, {40, 26.200, 0}, {50, 34.300, 0}
+    };
+
+    std::vector<DataRow> pgo = {
+        {10, 5.300, 0}, {20, 10.800, 0}, {30, 20.800, 0}, {40, 27.700, 0}, {50, 35.500, 0}
+    };
+
+    std::vector<DataRow> osc = {
+        {10, 0.010, 0}, {20, 0.020, 0}, {30, 0.031, 0}, {40, 0.047, 0}, {50, 0.060, 0}
+    };
+
+    for (auto& row : pvo) row.S = calculateSensitivity(row.L, row.U_eff);
+    for (auto& row : pgo) row.S = calculateSensitivity(row.L, row.U_eff);
+    for (auto& row : osc) row.S = calculateSensitivity(row.L, row.U_eff);
+
+    printTable(pvo, "Пластины вертикального отклонения (ПВО)");
+    printTable(pgo, "Пластины горизонтального отклонения (ПГО)");
+    printTable(osc, "Максимальная чувствительность осциллографа");
+
+    std::vector<LissajousData> lissajousData = {
+        {"1:1", 50.0, 0.0},
+        {"2:1", 25.0, 0.0},
+        {"1:3", 150.0, 0.0},
+        {"1:2", 100.0, 0.0}
+    };
+
+    for (auto& row : lissajousData) {
+        size_t colon_pos = row.ratio.find(':');
+        double m = std::stod(row.ratio.substr(0, colon_pos));
+        double n = std::stod(row.ratio.substr(colon_pos + 1));
+        
+        row.fx = row.fy * (m / n);
+    }
+
+    printLissajousTable(lissajousData);
+
+    return 0;
+}
